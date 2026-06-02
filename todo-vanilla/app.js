@@ -33,15 +33,20 @@ const modalConfirmBtn = document.getElementById('modal-confirm-btn');
 // date는 'YYYY-MM-DD' 형식의 문자열로 저장
 let todoItems = [];
 
-let nextId        = 1;
-let currentFilter = 'all';
+let nextId          = 1;
+let currentFilter   = 'all';
 let pendingDeleteId = null;
 
 // 현재 선택된 날짜 (Date 객체)
 // 앱 시작 시 오늘 날짜로 초기화
 let selectedDate = getTodayDate();
 
+// 로컬스토리지 키 상수
+const STORAGE_KEY_ITEMS  = 'todo_items';
+const STORAGE_KEY_NEXTID = 'todo_next_id';
+
 // ─── 초기화 ──────────────────────────────────
+loadFromStorage(); // 저장된 데이터 먼저 복원
 renderDateNav();
 renderAll();
 
@@ -172,6 +177,8 @@ function handleAddTodo() {
   todoInput.value = '';
   clearErrorState();
 
+  saveToStorage(); // 추가 후 저장
+
   // 완료 탭에서 추가하면 전체 탭으로 전환
   if (currentFilter === 'done') {
     handleFilterChange('all');
@@ -188,6 +195,7 @@ function toggleDone(id) {
   const todo = findTodoById(id);
   if (!todo) return;
   todo.isDone = !todo.isDone;
+  saveToStorage(); // 완료 상태 변경 후 저장
   renderAll();
 }
 
@@ -262,6 +270,7 @@ function handleSaveEdit(id, editInput, dateInput) {
     todo.date = dateInput.value;
   }
 
+  saveToStorage(); // 수정 후 저장
   renderAll();
 }
 
@@ -338,6 +347,7 @@ function closeDeleteModal() {
 function confirmDelete() {
   if (pendingDeleteId === null) return;
   todoItems = todoItems.filter((t) => t.id !== pendingDeleteId);
+  saveToStorage(); // 삭제 후 저장
   closeDeleteModal();
   renderAll();
 }
@@ -443,6 +453,41 @@ function updateEmptyState() {
     emptyMsg.textContent = messages[currentFilter];
   } else {
     emptyState.classList.add('is-hidden');
+  }
+}
+
+// ─── 로컬스토리지 ──────────────────────────
+
+/**
+ * 현재 todoItems와 nextId를 로컬스토리지에 저장
+ * JSON.stringify로 직렬화해서 문자열로 보관
+ */
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY_ITEMS,  JSON.stringify(todoItems));
+  localStorage.setItem(STORAGE_KEY_NEXTID, String(nextId));
+}
+
+/**
+ * 로컬스토리지에서 데이터를 불러와 상태 복원
+ * 저장된 데이터가 없으면 기본 초기값 유지
+ */
+function loadFromStorage() {
+  try {
+    const savedItems  = localStorage.getItem(STORAGE_KEY_ITEMS);
+    const savedNextId = localStorage.getItem(STORAGE_KEY_NEXTID);
+
+    if (savedItems) {
+      // JSON.parse로 역직렬화해 배열 복원
+      todoItems = JSON.parse(savedItems);
+    }
+    if (savedNextId) {
+      nextId = Number(savedNextId);
+    }
+  } catch (e) {
+    // 파싱 오류 시 초기값으로 안전하게 복원
+    console.warn('로컬스토리지 복원 실패, 초기화합니다.', e);
+    todoItems = [];
+    nextId    = 1;
   }
 }
 
