@@ -117,7 +117,6 @@ body {
   box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.12);
 }
 
-/* 입력 오류 상태 */
 .todo-input.is-error {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(217, 58, 58, 0.1);
@@ -140,15 +139,9 @@ body {
   justify-content: center;
 }
 
-.add-btn:hover {
-  background: var(--color-primary-dark);
-}
+.add-btn:hover  { background: var(--color-primary-dark); }
+.add-btn:active { transform: scale(0.94); }
 
-.add-btn:active {
-  transform: scale(0.94);
-}
-
-/* 오류 메시지 */
 .error-msg {
   font-size: 0.8rem;
   color: var(--color-error);
@@ -157,8 +150,43 @@ body {
   transition: opacity var(--transition);
 }
 
-.error-msg:empty {
-  opacity: 0;
+.error-msg:empty { opacity: 0; }
+
+/* =============================================
+   필터 탭
+   ============================================= */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.filter-tab {
+  flex: 1;
+  height: 36px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+.filter-tab:hover:not(.is-active) {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* 선택된 탭 스타일 */
+.filter-tab.is-active {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(103, 43, 224, 0.25);
 }
 
 /* =============================================
@@ -191,11 +219,8 @@ body {
   transition: border-color var(--transition);
 }
 
-.todo-item:hover {
-  border-color: var(--color-primary-soft);
-}
+.todo-item:hover { border-color: var(--color-primary-soft); }
 
-/* 완료 상태 항목 */
 .todo-item.is-done {
   background: #faf9fe;
   border-color: #ede6fb;
@@ -206,7 +231,7 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 완료 체크박스 (커스텀) */
+/* 완료 체크박스 */
 .complete-checkbox {
   width: 20px;
   height: 20px;
@@ -225,7 +250,6 @@ body {
   border-color: var(--color-primary);
 }
 
-/* 체크 아이콘 */
 .complete-checkbox:checked::after {
   content: '';
   position: absolute;
@@ -247,13 +271,12 @@ body {
   transition: color var(--transition);
 }
 
-/* 완료 시 취소선 */
 .todo-item.is-done .todo-text {
   text-decoration: line-through;
   color: var(--color-done-text);
 }
 
-/* 수정 입력창 (편집 모드에서만 표시) */
+/* 수정 입력창 */
 .edit-input {
   flex: 1;
   height: 34px;
@@ -286,40 +309,19 @@ body {
   transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
-.btn-edit {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-}
+.btn-edit  { background: var(--color-primary-soft); color: var(--color-primary); }
+.btn-edit:hover  { background: #ddd1f8; }
 
-.btn-edit:hover {
-  background: #ddd1f8;
-}
+.btn-save  { background: var(--color-primary); color: #fff; }
+.btn-save:hover  { background: var(--color-primary-dark); }
 
-.btn-save {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.btn-save:hover {
-  background: var(--color-primary-dark);
-}
-
-.btn-delete {
-  background: #fdeaea;
-  color: var(--color-error);
-}
-
-.btn-delete:hover {
-  background: #f8c8c8;
-}
+.btn-delete { background: #fdeaea; color: var(--color-error); }
+.btn-delete:hover { background: #f8c8c8; }
 
 .btn-edit:active,
 .btn-save:active,
-.btn-delete:active {
-  transform: scale(0.93);
-}
+.btn-delete:active { transform: scale(0.93); }
 
-/* 완료된 항목에서는 수정 버튼 비활성화 */
 .todo-item.is-done .btn-edit {
   opacity: 0.35;
   pointer-events: none;
@@ -338,9 +340,7 @@ body {
   font-size: 0.9rem;
 }
 
-.empty-state.is-hidden {
-  display: none;
-}
+.empty-state.is-hidden { display: none; }
 
 .empty-icon {
   font-size: 2rem;
@@ -350,8 +350,6 @@ body {
 /* =============================================
    삭제 확인 모달
    ============================================= */
-
-/* 반투명 배경 오버레이 */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -361,19 +359,16 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  /* 기본 숨김 — JS에서 .is-visible 클래스로 표시 */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
 
-/* 모달 표시 상태 */
 .modal-backdrop.is-visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* 모달 카드 */
 .modal {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -383,7 +378,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* 등장 애니메이션 */
   transform: translateY(10px) scale(0.97);
   transition: transform 0.22s ease;
 }
@@ -392,14 +386,12 @@ body {
   transform: translateY(0) scale(1);
 }
 
-/* 모달 제목 */
 .modal-title {
   font-size: 1rem;
   font-weight: 700;
   color: var(--color-text);
 }
 
-/* 삭제 대상 todo 미리보기 텍스트 */
 .modal-preview {
   font-size: 0.875rem;
   color: var(--color-text-muted);
@@ -408,14 +400,12 @@ body {
   padding: 8px 12px;
   line-height: 1.5;
   word-break: break-all;
-  /* 긴 텍스트는 2줄까지만 표시 */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* 버튼 영역 */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -435,26 +425,11 @@ body {
   transition: background var(--transition), transform var(--transition);
 }
 
-.btn-modal-cancel {
-  background: var(--color-bg);
-  color: var(--color-text-muted);
-}
+.btn-modal-cancel { background: var(--color-bg); color: var(--color-text-muted); }
+.btn-modal-cancel:hover { background: var(--color-border); color: var(--color-text); }
 
-.btn-modal-cancel:hover {
-  background: var(--color-border);
-  color: var(--color-text);
-}
-
-.btn-modal-confirm {
-  background: var(--color-error);
-  color: #fff;
-}
-
-.btn-modal-confirm:hover {
-  background: #b82e2e;
-}
+.btn-modal-confirm { background: var(--color-error); color: #fff; }
+.btn-modal-confirm:hover { background: #b82e2e; }
 
 .btn-modal-cancel:active,
-.btn-modal-confirm:active {
-  transform: scale(0.94);
-}
+.btn-modal-confirm:active { transform: scale(0.94); }

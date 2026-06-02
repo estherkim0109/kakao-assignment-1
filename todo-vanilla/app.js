@@ -8,15 +8,19 @@ const addBtn         = document.getElementById('add-btn');
 const todoList       = document.getElementById('todo-list');
 const errorMsg       = document.getElementById('error-msg');
 const emptyState     = document.getElementById('empty-state');
+const emptyMsg       = document.getElementById('empty-msg');
 const summaryTotal   = document.getElementById('summary-total');
 const summaryDone    = document.getElementById('summary-done');
 const summaryRemain  = document.getElementById('summary-remaining');
 
+// 필터 탭 버튼 목록 (NodeList → Array)
+const filterTabs = Array.from(document.querySelectorAll('.filter-tab'));
+
 // 삭제 확인 모달 관련 요소
-const deleteModal      = document.getElementById('delete-modal');
-const modalPreview     = document.getElementById('modal-preview');
-const modalCancelBtn   = document.getElementById('modal-cancel-btn');
-const modalConfirmBtn  = document.getElementById('modal-confirm-btn');
+const deleteModal     = document.getElementById('delete-modal');
+const modalPreview    = document.getElementById('modal-preview');
+const modalCancelBtn  = document.getElementById('modal-cancel-btn');
+const modalConfirmBtn = document.getElementById('modal-confirm-btn');
 
 // ─── 상태 관리 ───────────────────────────────
 // 각 todo 객체: { id, text, isDone }
@@ -25,7 +29,10 @@ let todoItems = [];
 // 다음 todo에 사용할 고유 ID (단순 증가)
 let nextId = 1;
 
-// 현재 삭제 대기 중인 todo ID (모달이 열려 있는 동안 보관)
+// 현재 활성화된 필터: 'all' | 'active' | 'done'
+let currentFilter = 'all';
+
+// 현재 삭제 대기 중인 todo ID
 let pendingDeleteId = null;
 
 // ─── 초기화 ──────────────────────────────────
@@ -36,7 +43,7 @@ renderAll();
 // 추가 버튼 클릭
 addBtn.addEventListener('click', handleAddTodo);
 
-// 입력창에서 Enter 키
+// 입력창 Enter 키
 todoInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') handleAddTodo();
 });
@@ -44,15 +51,21 @@ todoInput.addEventListener('keydown', (e) => {
 // 입력 시 오류 메시지 초기화
 todoInput.addEventListener('input', clearErrorState);
 
-// 모달 — 취소 버튼
+// 필터 탭 클릭 — 이벤트 위임
+document.querySelector('.filter-tabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.filter-tab');
+  if (!tab) return;
+  handleFilterChange(tab.dataset.filter);
+});
+
+// 모달 — 취소
 modalCancelBtn.addEventListener('click', closeDeleteModal);
 
-// 모달 — 삭제 확인 버튼
+// 모달 — 삭제 확인
 modalConfirmBtn.addEventListener('click', confirmDelete);
 
-// 모달 — 배경(오버레이) 클릭 시 닫기
+// 모달 — 배경 클릭으로 닫기
 deleteModal.addEventListener('click', (e) => {
-  // 클릭한 대상이 backdrop 자체일 때만 닫음 (모달 카드 클릭은 무시)
   if (e.target === deleteModal) closeDeleteModal();
 });
 
@@ -67,31 +80,32 @@ document.addEventListener('keydown', (e) => {
 
 /**
  * Todo 추가 처리
- * 빈 입력이면 오류 메시지를 표시하고 추가하지 않음
  */
 function handleAddTodo() {
   const text = todoInput.value.trim();
 
-  // 빈 입력 유효성 검사
   if (!text) {
     showError('할 일을 입력해주세요.');
     return;
   }
 
-  // 새 todo 객체 생성 후 목록에 추가
   const newTodo = { id: nextId++, text, isDone: false };
   todoItems.push(newTodo);
 
-  // 입력창 초기화 및 오류 상태 제거
   todoInput.value = '';
   clearErrorState();
 
-  renderAll();
+  // 새 항목이 보이도록 '전체' 또는 '진행 중' 탭으로 이동
+  if (currentFilter === 'done') {
+    handleFilterChange('all');
+  } else {
+    renderAll();
+  }
 }
 
 /**
  * Todo 완료 상태 토글
- * @param {number} id - 대상 todo ID
+ * @param {number} id
  */
 function toggleDone(id) {
   const todo = findTodoById(id);
@@ -103,8 +117,7 @@ function toggleDone(id) {
 
 /**
  * Todo 수정 모드 활성화
- * 텍스트 대신 입력창을 표시하고 저장 버튼으로 교체
- * @param {number} id - 대상 todo ID
+ * @param {number} id
  */
 function activateEditMode(id) {
   const listItem = document.querySelector(`[data-id="${id}"]`);
@@ -113,47 +126,37 @@ function activateEditMode(id) {
   const textEl  = listItem.querySelector('.todo-text');
   const editBtn = listItem.querySelector('.btn-edit');
 
-  // 현재 텍스트 값으로 편집용 input 생성
   const editInput = document.createElement('input');
   editInput.type      = 'text';
   editInput.className = 'edit-input';
   editInput.value     = textEl.textContent;
   editInput.maxLength = 100;
 
-  // 저장 버튼 생성
   const saveBtn = document.createElement('button');
   saveBtn.className   = 'btn-save';
   saveBtn.textContent = '저장';
   saveBtn.addEventListener('click', () => handleSaveEdit(id, editInput));
 
-  // Enter 키로도 저장 가능
   editInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSaveEdit(id, editInput);
-    if (e.key === 'Escape') renderAll(); // Esc 시 편집 취소
+    if (e.key === 'Enter')  handleSaveEdit(id, editInput);
+    if (e.key === 'Escape') renderAll();
   });
 
-  // 텍스트 → 입력창 교체, 수정 버튼 → 저장 버튼 교체
   textEl.replaceWith(editInput);
   editBtn.replaceWith(saveBtn);
 
-  // 편집창에 포커스 및 텍스트 전체 선택
   editInput.focus();
   editInput.select();
 }
 
 /**
  * 수정 내용 저장
- * @param {number} id        - 대상 todo ID
- * @param {HTMLInputElement} editInput - 편집 입력창 요소
+ * @param {number} id
+ * @param {HTMLInputElement} editInput
  */
 function handleSaveEdit(id, editInput) {
   const newText = editInput.value.trim();
-
-  // 빈 텍스트로 저장하지 않음
-  if (!newText) {
-    editInput.focus();
-    return;
-  }
+  if (!newText) { editInput.focus(); return; }
 
   const todo = findTodoById(id);
   if (!todo) return;
@@ -163,48 +166,69 @@ function handleSaveEdit(id, editInput) {
 }
 
 /**
+ * 필터 탭 변경 처리
+ * 탭 활성 스타일을 업데이트하고 목록을 다시 그림
+ * @param {string} filter - 'all' | 'active' | 'done'
+ */
+function handleFilterChange(filter) {
+  currentFilter = filter;
+
+  // 탭 활성 클래스 및 aria-selected 갱신
+  filterTabs.forEach((tab) => {
+    const isActive = tab.dataset.filter === filter;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', isActive);
+  });
+
+  renderAll();
+}
+
+/**
+ * 현재 필터에 맞는 todo 목록 반환
+ * @returns {Array}
+ */
+function getFilteredItems() {
+  switch (currentFilter) {
+    case 'active': return todoItems.filter((t) => !t.isDone);
+    case 'done':   return todoItems.filter((t) =>  t.isDone);
+    default: {
+      // '전체' 탭: 진행 중 항목을 위에, 완료 항목을 아래에 표시
+      const active = todoItems.filter((t) => !t.isDone);
+      const done   = todoItems.filter((t) =>  t.isDone);
+      return [...active, ...done];
+    }
+  }
+}
+
+/**
  * 삭제 확인 모달 열기
- * 바로 삭제하지 않고, 대상 ID를 보관한 뒤 모달을 표시
- * @param {number} id - 삭제 요청한 todo ID
+ * @param {number} id
  */
 function requestDeleteTodo(id) {
   const todo = findTodoById(id);
   if (!todo) return;
 
-  // 삭제 대기 ID 저장
   pendingDeleteId = id;
-
-  // 모달에 todo 텍스트 미리보기 표시
   modalPreview.textContent = todo.text;
-
-  // 모달 표시
   openDeleteModal();
 }
 
-/**
- * 모달을 화면에 표시
- */
+/** 모달 표시 */
 function openDeleteModal() {
   deleteModal.classList.add('is-visible');
-  // 접근성: 모달이 열리면 삭제 확인 버튼에 포커스
   modalConfirmBtn.focus();
 }
 
-/**
- * 모달 닫기 및 대기 상태 초기화
- */
+/** 모달 닫기 */
 function closeDeleteModal() {
   deleteModal.classList.remove('is-visible');
   pendingDeleteId = null;
 }
 
-/**
- * 모달에서 삭제 확인 시 실제 삭제 수행
- */
+/** 삭제 확인 후 실제 삭제 수행 */
 function confirmDelete() {
   if (pendingDeleteId === null) return;
 
-  // 대기 중인 ID로 항목 제거
   todoItems = todoItems.filter((todo) => todo.id !== pendingDeleteId);
 
   closeDeleteModal();
@@ -214,8 +238,7 @@ function confirmDelete() {
 // ─── 렌더링 ──────────────────────────────────
 
 /**
- * 전체 UI 다시 그리기
- * 목록 + 요약 카운트 + 빈 상태 모두 갱신
+ * 전체 UI 갱신
  */
 function renderAll() {
   renderTodoList();
@@ -224,19 +247,19 @@ function renderAll() {
 }
 
 /**
- * todo 목록을 DOM에 렌더링
+ * 필터링된 todo 목록을 DOM에 렌더링
  */
 function renderTodoList() {
   todoList.innerHTML = '';
 
-  todoItems.forEach((todo) => {
+  getFilteredItems().forEach((todo) => {
     const li = createTodoElement(todo);
     todoList.appendChild(li);
   });
 }
 
 /**
- * 단일 todo 항목의 li 요소를 생성하여 반환
+ * 단일 todo li 요소 생성
  * @param {{ id: number, text: string, isDone: boolean }} todo
  * @returns {HTMLLIElement}
  */
@@ -245,7 +268,6 @@ function createTodoElement(todo) {
   li.className  = `todo-item${todo.isDone ? ' is-done' : ''}`;
   li.dataset.id = todo.id;
 
-  // 완료 체크박스
   const checkbox = document.createElement('input');
   checkbox.type      = 'checkbox';
   checkbox.className = 'complete-checkbox';
@@ -253,26 +275,22 @@ function createTodoElement(todo) {
   checkbox.setAttribute('aria-label', '완료 처리');
   checkbox.addEventListener('change', () => toggleDone(todo.id));
 
-  // Todo 텍스트
   const textEl = document.createElement('span');
   textEl.className   = 'todo-text';
   textEl.textContent = todo.text;
 
-  // 수정 버튼
   const editBtn = document.createElement('button');
   editBtn.className   = 'btn-edit';
   editBtn.textContent = '수정';
   editBtn.setAttribute('aria-label', '수정');
   editBtn.addEventListener('click', () => activateEditMode(todo.id));
 
-  // 삭제 버튼 — 클릭 시 바로 삭제 대신 확인 모달 열기
   const deleteBtn = document.createElement('button');
   deleteBtn.className   = 'btn-delete';
   deleteBtn.textContent = '삭제';
   deleteBtn.setAttribute('aria-label', '삭제');
   deleteBtn.addEventListener('click', () => requestDeleteTodo(todo.id));
 
-  // 버튼 그룹
   const actionGroup = document.createElement('div');
   actionGroup.className = 'action-group';
   actionGroup.append(editBtn, deleteBtn);
@@ -282,7 +300,7 @@ function createTodoElement(todo) {
 }
 
 /**
- * 헤더 카운트 요약 갱신
+ * 헤더 요약 카운트 갱신 (항상 전체 기준)
  */
 function renderSummary() {
   const total     = todoItems.length;
@@ -295,11 +313,22 @@ function renderSummary() {
 }
 
 /**
- * todo가 없을 때 빈 상태 화면 표시/숨김
+ * 빈 상태 표시/숨김
+ * 현재 필터 기준으로 표시할 항목이 없을 때 안내 문구를 바꿔서 표시
  */
 function updateEmptyState() {
-  if (todoItems.length === 0) {
+  const filtered = getFilteredItems();
+
+  if (filtered.length === 0) {
     emptyState.classList.remove('is-hidden');
+
+    // 필터별 안내 문구
+    const messages = {
+      all:    '할 일을 추가해보세요',
+      active: '진행 중인 할 일이 없어요',
+      done:   '완료된 할 일이 없어요',
+    };
+    emptyMsg.textContent = messages[currentFilter];
   } else {
     emptyState.classList.add('is-hidden');
   }
@@ -310,15 +339,14 @@ function updateEmptyState() {
 /**
  * ID로 todo 객체 찾기
  * @param {number} id
- * @returns {{ id: number, text: string, isDone: boolean } | undefined}
  */
 function findTodoById(id) {
   return todoItems.find((todo) => todo.id === id);
 }
 
 /**
- * 오류 메시지 표시 및 입력창 오류 스타일 적용
- * @param {string} message - 표시할 안내 문구
+ * 오류 메시지 표시
+ * @param {string} message
  */
 function showError(message) {
   errorMsg.textContent = message;
@@ -326,9 +354,7 @@ function showError(message) {
   todoInput.focus();
 }
 
-/**
- * 오류 상태 초기화
- */
+/** 오류 상태 초기화 */
 function clearErrorState() {
   errorMsg.textContent = '';
   todoInput.classList.remove('is-error');
