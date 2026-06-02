@@ -412,9 +412,13 @@ function renderWeekNav() {
   weekDaysEl.innerHTML = '';
 
   weekDays.forEach((day, i) => {
-    const dateKey  = formatDateKey(day);
-    // 해당 날짜의 todo 총 개수 (완료 포함)
-    const count    = todoItems.filter((t) => t.date === dateKey).length;
+    const dateKey    = formatDateKey(day);
+    const dayTodos   = todoItems.filter((t) => t.date === dateKey);
+    const totalCount = dayTodos.length;
+    // 미완료 개수만 표시 (완료 제외)
+    const activeCount = dayTodos.filter((t) => !t.isDone).length;
+    // 할 일이 하나 이상 있고 전부 완료된 경우
+    const allDone     = totalCount > 0 && activeCount === 0;
 
     const li = document.createElement('li');
     li.className = 'week-day-cell';
@@ -433,8 +437,20 @@ function renderWeekNav() {
     dateEl.textContent = day.getDate();
 
     const countEl = document.createElement('span');
-    countEl.className   = `week-day-count${count > 0 ? ' has-todos' : ''}`;
-    countEl.textContent = count > 0 ? count : '';
+
+    if (allDone) {
+      // 전부 완료 → 체크 아이콘 표시
+      countEl.className   = 'week-day-count is-all-done';
+      countEl.textContent = '✓';
+    } else if (activeCount > 0) {
+      // 미완료 항목이 있으면 미완료 개수만 표시
+      countEl.className   = 'week-day-count has-todos';
+      countEl.textContent = activeCount;
+    } else {
+      // 할 일 없음 → 빈칸
+      countEl.className   = 'week-day-count';
+      countEl.textContent = '';
+    }
 
     li.append(nameEl, dateEl, countEl);
     weekDaysEl.appendChild(li);
