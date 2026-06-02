@@ -72,89 +72,141 @@ body {
   color: var(--color-text-muted);
 }
 
-.task-summary strong {
-  color: var(--color-text);
-  font-weight: 700;
-}
-
-.task-summary .divider {
-  color: var(--color-border);
-}
+.task-summary strong { color: var(--color-text); font-weight: 700; }
+.task-summary .divider { color: var(--color-border); }
 
 /* =============================================
-   입력 영역
+   주간 뷰
    ============================================= */
-.input-section {
+.week-nav {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px 12px;
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-.input-row {
+/* 주간 헤더: 이전/다음 버튼 + 날짜 범위 레이블 */
+.week-header {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.todo-input {
-  flex: 1;
-  height: 50px;
-  padding: 0 16px;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  color: var(--color-text);
-  background: var(--color-surface);
-  outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-
-.todo-input::placeholder {
+.week-range-label {
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--color-text-muted);
 }
 
-.todo-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.12);
-}
-
-.todo-input.is-error {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(217, 58, 58, 0.1);
-}
-
-.add-btn {
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
-  background: var(--color-primary);
-  color: #fff;
+.week-arrow-btn {
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: var(--radius-md);
-  font-size: 1.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
-  transition: background var(--transition), transform var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
-.add-btn:hover  { background: var(--color-primary-dark); }
-.add-btn:active { transform: scale(0.94); }
+.week-arrow-btn:hover  { background: var(--color-primary-soft); color: var(--color-primary); }
+.week-arrow-btn:active { transform: scale(0.9); }
 
-.error-msg {
-  font-size: 0.8rem;
-  color: var(--color-error);
-  min-height: 18px;
-  padding-left: 4px;
-  transition: opacity var(--transition);
+/* 7개 요일 셀 목록 */
+.week-days {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
 
-.error-msg:empty { opacity: 0; }
+/* 개별 요일 셀 */
+.week-day-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition);
+  border: 1.5px solid transparent;
+}
 
+.week-day-cell:hover {
+  background: var(--color-bg);
+}
+
+/* 요일 이름 (월 화 수 ...) */
+.week-day-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* 날짜 숫자 */
+.week-day-date {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: background var(--transition), color var(--transition);
+}
+
+/* Todo 개수 뱃지 */
+.week-day-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-height: 14px; /* 개수 없어도 높이 유지 */
+}
+
+.week-day-count.has-todos {
+  color: var(--color-primary);
+}
+
+/* 오늘 날짜 강조 */
+.week-day-cell.is-today .week-day-date {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.week-day-cell.is-today .week-day-name {
+  color: var(--color-primary);
+}
+
+/* 선택된 날짜 */
+.week-day-cell.is-selected .week-day-date {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* 오늘이면서 선택된 경우 선택 스타일 우선 */
+.week-day-cell.is-today.is-selected .week-day-date {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.week-day-cell.is-selected {
+  border-color: var(--color-border);
+}
 
 /* =============================================
-   날짜 네비게이터
+   날짜 네비게이터 (일간)
    ============================================= */
 .date-nav {
   display: flex;
@@ -211,6 +263,75 @@ body {
 .today-badge.is-hidden { display: none; }
 
 /* =============================================
+   입력 영역
+   ============================================= */
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.todo-input {
+  flex: 1;
+  height: 50px;
+  padding: 0 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.todo-input::placeholder { color: var(--color-text-muted); }
+
+.todo-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.12);
+}
+
+.todo-input.is-error {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 58, 58, 0.1);
+}
+
+.add-btn {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-btn:hover  { background: var(--color-primary-dark); }
+.add-btn:active { transform: scale(0.94); }
+
+.error-msg {
+  font-size: 0.8rem;
+  color: var(--color-error);
+  min-height: 18px;
+  padding-left: 4px;
+  transition: opacity var(--transition);
+}
+
+.error-msg:empty { opacity: 0; }
+
+/* =============================================
    필터 탭
    ============================================= */
 .filter-tabs {
@@ -240,7 +361,6 @@ body {
   color: var(--color-text);
 }
 
-/* 선택된 탭 스타일 */
 .filter-tab.is-active {
   background: var(--color-primary);
   color: #fff;
@@ -263,7 +383,6 @@ body {
   gap: 8px;
 }
 
-/* ─── 개별 Todo 항목 ─── */
 .todo-item {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
@@ -289,7 +408,6 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 완료 체크박스 */
 .complete-checkbox {
   width: 20px;
   height: 20px;
@@ -319,7 +437,6 @@ body {
   transform: rotate(45deg);
 }
 
-/* Todo 텍스트 */
 .todo-text {
   flex: 1;
   font-size: 0.95rem;
@@ -334,7 +451,7 @@ body {
   color: var(--color-done-text);
 }
 
-/* 수정 모드 래퍼 — 텍스트 + 날짜 input을 세로로 묶음 */
+/* 수정 모드 래퍼 */
 .edit-wrapper {
   flex: 1;
   display: flex;
@@ -343,7 +460,6 @@ body {
   min-width: 0;
 }
 
-/* 수정 텍스트 입력창 */
 .edit-input {
   width: 100%;
   height: 34px;
@@ -356,7 +472,6 @@ body {
   box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.1);
 }
 
-/* 수정 날짜 선택 input */
 .edit-date-input {
   width: 100%;
   height: 30px;
@@ -377,16 +492,14 @@ body {
   color: var(--color-text);
 }
 
-/* ─── 액션 버튼 그룹 ─── */
+/* 액션 버튼 그룹 */
 .action-group {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
 }
 
-.btn-edit,
-.btn-save,
-.btn-delete {
+.btn-edit, .btn-save, .btn-delete {
   height: 30px;
   padding: 0 10px;
   border: none;
@@ -397,23 +510,16 @@ body {
   transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
-.btn-edit  { background: var(--color-primary-soft); color: var(--color-primary); }
-.btn-edit:hover  { background: #ddd1f8; }
-
-.btn-save  { background: var(--color-primary); color: #fff; }
-.btn-save:hover  { background: var(--color-primary-dark); }
-
+.btn-edit   { background: var(--color-primary-soft); color: var(--color-primary); }
+.btn-edit:hover   { background: #ddd1f8; }
+.btn-save   { background: var(--color-primary); color: #fff; }
+.btn-save:hover   { background: var(--color-primary-dark); }
 .btn-delete { background: #fdeaea; color: var(--color-error); }
 .btn-delete:hover { background: #f8c8c8; }
 
-.btn-edit:active,
-.btn-save:active,
-.btn-delete:active { transform: scale(0.93); }
+.btn-edit:active, .btn-save:active, .btn-delete:active { transform: scale(0.93); }
 
-.todo-item.is-done .btn-edit {
-  opacity: 0.35;
-  pointer-events: none;
-}
+.todo-item.is-done .btn-edit { opacity: 0.35; pointer-events: none; }
 
 /* =============================================
    빈 상태
@@ -452,10 +558,7 @@ body {
   transition: opacity 0.2s ease;
 }
 
-.modal-backdrop.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
+.modal-backdrop.is-visible { opacity: 1; pointer-events: auto; }
 
 .modal {
   background: var(--color-surface);
@@ -470,9 +573,7 @@ body {
   transition: transform 0.22s ease;
 }
 
-.modal-backdrop.is-visible .modal {
-  transform: translateY(0) scale(1);
-}
+.modal-backdrop.is-visible .modal { transform: translateY(0) scale(1); }
 
 .modal-title {
   font-size: 1rem;
@@ -501,8 +602,7 @@ body {
   margin-top: 6px;
 }
 
-.btn-modal-cancel,
-.btn-modal-confirm {
+.btn-modal-cancel, .btn-modal-confirm {
   height: 36px;
   padding: 0 18px;
   border: none;
@@ -515,7 +615,6 @@ body {
 
 .btn-modal-cancel { background: var(--color-bg); color: var(--color-text-muted); }
 .btn-modal-cancel:hover { background: var(--color-border); color: var(--color-text); }
-
 .btn-modal-confirm { background: var(--color-error); color: #fff; }
 .btn-modal-confirm:hover { background: #b82e2e; }
 
