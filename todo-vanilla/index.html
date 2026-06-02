@@ -13,7 +13,6 @@
     <!-- 앱 헤더 -->
     <header class="app-header">
       <h1 class="app-title">Todo</h1>
-      <!-- 전체 / 완료 / 미완료 카운트 -->
       <div class="task-summary">
         <span id="summary-total">전체 <strong>0</strong></span>
         <span class="divider">·</span>
@@ -22,6 +21,16 @@
         <span id="summary-remaining">남은 것 <strong>0</strong></span>
       </div>
     </header>
+
+    <!-- 일간 날짜 네비게이터 -->
+    <section class="date-nav" aria-label="날짜 이동">
+      <button id="prev-date-btn" class="date-nav-btn" aria-label="이전 날짜">&#8249;</button>
+      <div class="date-display">
+        <span id="date-label" class="date-label"></span>
+        <span id="today-badge" class="today-badge">오늘</span>
+      </div>
+      <button id="next-date-btn" class="date-nav-btn" aria-label="다음 날짜">&#8250;</button>
+    </section>
 
     <!-- Todo 입력 영역 -->
     <section class="input-section">
@@ -36,22 +45,19 @@
         />
         <button id="add-btn" class="add-btn" aria-label="추가">+</button>
       </div>
-      <!-- 빈 입력 안내 메시지 (기본 숨김) -->
       <p id="error-msg" class="error-msg" aria-live="polite"></p>
     </section>
 
     <!-- 상태별 필터 탭 -->
     <nav class="filter-tabs" role="tablist" aria-label="할 일 필터">
-      <button class="filter-tab is-active" data-filter="all"     role="tab" aria-selected="true">전체</button>
-      <button class="filter-tab"           data-filter="active"  role="tab" aria-selected="false">진행 중</button>
-      <button class="filter-tab"           data-filter="done"    role="tab" aria-selected="false">완료</button>
+      <button class="filter-tab is-active" data-filter="all"    role="tab" aria-selected="true">전체</button>
+      <button class="filter-tab"           data-filter="active" role="tab" aria-selected="false">진행 중</button>
+      <button class="filter-tab"           data-filter="done"   role="tab" aria-selected="false">완료</button>
     </nav>
 
     <!-- Todo 목록 -->
     <main class="todo-list-section">
       <ul id="todo-list" class="todo-list"></ul>
-
-      <!-- 해당 필터에 표시할 항목이 없을 때 -->
       <div id="empty-state" class="empty-state">
         <span class="empty-icon">✦</span>
         <p id="empty-msg">할 일을 추가해보세요</p>
@@ -60,13 +66,13 @@
 
   </div>
 
-  <!-- ─── 삭제 확인 모달 ─── -->
+  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <p id="modal-title" class="modal-title">정말 삭제할까요?</p>
       <p id="modal-preview" class="modal-preview"></p>
       <div class="modal-actions">
-        <button id="modal-cancel-btn" class="btn-modal-cancel">취소</button>
+        <button id="modal-cancel-btn"  class="btn-modal-cancel">취소</button>
         <button id="modal-confirm-btn" class="btn-modal-confirm">삭제</button>
       </div>
     </div>

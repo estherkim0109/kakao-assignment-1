@@ -13,73 +13,145 @@ const summaryTotal   = document.getElementById('summary-total');
 const summaryDone    = document.getElementById('summary-done');
 const summaryRemain  = document.getElementById('summary-remaining');
 
-// 필터 탭 버튼 목록 (NodeList → Array)
+// 날짜 네비게이터 요소
+const prevDateBtn  = document.getElementById('prev-date-btn');
+const nextDateBtn  = document.getElementById('next-date-btn');
+const dateLabel    = document.getElementById('date-label');
+const todayBadge   = document.getElementById('today-badge');
+
+// 필터 탭
 const filterTabs = Array.from(document.querySelectorAll('.filter-tab'));
 
-// 삭제 확인 모달 관련 요소
+// 삭제 확인 모달
 const deleteModal     = document.getElementById('delete-modal');
 const modalPreview    = document.getElementById('modal-preview');
 const modalCancelBtn  = document.getElementById('modal-cancel-btn');
 const modalConfirmBtn = document.getElementById('modal-confirm-btn');
 
 // ─── 상태 관리 ───────────────────────────────
-// 각 todo 객체: { id, text, isDone }
+// 각 todo 객체: { id, text, isDone, date }
+// date는 'YYYY-MM-DD' 형식의 문자열로 저장
 let todoItems = [];
 
-// 다음 todo에 사용할 고유 ID (단순 증가)
-let nextId = 1;
-
-// 현재 활성화된 필터: 'all' | 'active' | 'done'
+let nextId        = 1;
 let currentFilter = 'all';
-
-// 현재 삭제 대기 중인 todo ID
 let pendingDeleteId = null;
 
+// 현재 선택된 날짜 (Date 객체)
+// 앱 시작 시 오늘 날짜로 초기화
+let selectedDate = getTodayDate();
+
 // ─── 초기화 ──────────────────────────────────
+renderDateNav();
 renderAll();
 
 // ─── 이벤트 리스너 ───────────────────────────
 
-// 추가 버튼 클릭
 addBtn.addEventListener('click', handleAddTodo);
 
-// 입력창 Enter 키
 todoInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') handleAddTodo();
 });
 
-// 입력 시 오류 메시지 초기화
 todoInput.addEventListener('input', clearErrorState);
 
-// 필터 탭 클릭 — 이벤트 위임
+// 이전 날짜 버튼
+prevDateBtn.addEventListener('click', () => {
+  selectedDate = shiftDate(selectedDate, -1);
+  renderDateNav();
+  resetFilterToAll();
+});
+
+// 다음 날짜 버튼
+nextDateBtn.addEventListener('click', () => {
+  selectedDate = shiftDate(selectedDate, +1);
+  renderDateNav();
+  resetFilterToAll();
+});
+
+// 필터 탭 — 이벤트 위임
 document.querySelector('.filter-tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.filter-tab');
   if (!tab) return;
   handleFilterChange(tab.dataset.filter);
 });
 
-// 모달 — 취소
 modalCancelBtn.addEventListener('click', closeDeleteModal);
-
-// 모달 — 삭제 확인
 modalConfirmBtn.addEventListener('click', confirmDelete);
 
-// 모달 — 배경 클릭으로 닫기
 deleteModal.addEventListener('click', (e) => {
   if (e.target === deleteModal) closeDeleteModal();
 });
 
-// 모달 — ESC 키로 닫기
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && deleteModal.classList.contains('is-visible')) {
     closeDeleteModal();
   }
 });
 
+// ─── 날짜 관련 함수 ──────────────────────────
+
+/**
+ * 오늘 날짜를 시간 없이 반환 (자정 기준 Date 객체)
+ * @returns {Date}
+ */
+function getTodayDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Date 객체를 'YYYY-MM-DD' 문자열로 변환
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDateKey(date) {
+  const y  = date.getFullYear();
+  const m  = String(date.getMonth() + 1).padStart(2, '0');
+  const d  = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Date 객체를 화면에 표시할 한국어 형식으로 변환
+ * 예: "2025년 6월 2일 (월)"
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDateDisplay(date) {
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const y    = date.getFullYear();
+  const m    = date.getMonth() + 1;
+  const d    = date.getDate();
+  const day  = days[date.getDay()];
+  return `${y}년 ${m}월 ${d}일 (${day})`;
+}
+
+/**
+ * 날짜를 n일만큼 이동한 새 Date 반환 (원본 불변)
+ * @param {Date} date
+ * @param {number} days - 양수: 이후, 음수: 이전
+ * @returns {Date}
+ */
+function shiftDate(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+/**
+ * 선택된 날짜가 오늘인지 확인
+ * @returns {boolean}
+ */
+function isSelectedDateToday() {
+  return formatDateKey(selectedDate) === formatDateKey(getTodayDate());
+}
+
 // ─── 기능 함수 ───────────────────────────────
 
 /**
- * Todo 추가 처리
+ * Todo 추가 — 현재 선택된 날짜를 함께 저장
  */
 function handleAddTodo() {
   const text = todoInput.value.trim();
@@ -89,13 +161,18 @@ function handleAddTodo() {
     return;
   }
 
-  const newTodo = { id: nextId++, text, isDone: false };
+  const newTodo = {
+    id:     nextId++,
+    text,
+    isDone: false,
+    date:   formatDateKey(selectedDate), // 선택된 날짜 저장
+  };
   todoItems.push(newTodo);
 
   todoInput.value = '';
   clearErrorState();
 
-  // 새 항목이 보이도록 '전체' 또는 '진행 중' 탭으로 이동
+  // 완료 탭에서 추가하면 전체 탭으로 전환
   if (currentFilter === 'done') {
     handleFilterChange('all');
   } else {
@@ -104,19 +181,18 @@ function handleAddTodo() {
 }
 
 /**
- * Todo 완료 상태 토글
+ * Todo 완료 토글
  * @param {number} id
  */
 function toggleDone(id) {
   const todo = findTodoById(id);
   if (!todo) return;
-
   todo.isDone = !todo.isDone;
   renderAll();
 }
 
 /**
- * Todo 수정 모드 활성화
+ * 수정 모드 활성화
  * @param {number} id
  */
 function activateEditMode(id) {
@@ -150,7 +226,7 @@ function activateEditMode(id) {
 }
 
 /**
- * 수정 내용 저장
+ * 수정 저장
  * @param {number} id
  * @param {HTMLInputElement} editInput
  */
@@ -160,20 +236,17 @@ function handleSaveEdit(id, editInput) {
 
   const todo = findTodoById(id);
   if (!todo) return;
-
   todo.text = newText;
   renderAll();
 }
 
 /**
- * 필터 탭 변경 처리
- * 탭 활성 스타일을 업데이트하고 목록을 다시 그림
+ * 필터 탭 변경
  * @param {string} filter - 'all' | 'active' | 'done'
  */
 function handleFilterChange(filter) {
   currentFilter = filter;
 
-  // 탭 활성 클래스 및 aria-selected 갱신
   filterTabs.forEach((tab) => {
     const isActive = tab.dataset.filter === filter;
     tab.classList.toggle('is-active', isActive);
@@ -184,53 +257,62 @@ function handleFilterChange(filter) {
 }
 
 /**
- * 현재 필터에 맞는 todo 목록 반환
+ * 날짜 이동 시 필터를 '전체'로 초기화
+ */
+function resetFilterToAll() {
+  handleFilterChange('all');
+}
+
+/**
+ * 현재 선택 날짜 + 필터 기준으로 표시할 todo 반환
  * @returns {Array}
  */
 function getFilteredItems() {
+  const dateKey = formatDateKey(selectedDate);
+
+  // 1단계: 선택된 날짜의 항목만 추림
+  const byDate = todoItems.filter((t) => t.date === dateKey);
+
+  // 2단계: 상태 필터 적용 + 완료 항목은 하단 정렬
   switch (currentFilter) {
-    case 'active': return todoItems.filter((t) => !t.isDone);
-    case 'done':   return todoItems.filter((t) =>  t.isDone);
+    case 'active':
+      return byDate.filter((t) => !t.isDone);
+    case 'done':
+      return byDate.filter((t) =>  t.isDone);
     default: {
-      // '전체' 탭: 진행 중 항목을 위에, 완료 항목을 아래에 표시
-      const active = todoItems.filter((t) => !t.isDone);
-      const done   = todoItems.filter((t) =>  t.isDone);
+      // '전체': 진행 중 위 / 완료 아래
+      const active = byDate.filter((t) => !t.isDone);
+      const done   = byDate.filter((t) =>  t.isDone);
       return [...active, ...done];
     }
   }
 }
 
 /**
- * 삭제 확인 모달 열기
+ * 삭제 모달 열기
  * @param {number} id
  */
 function requestDeleteTodo(id) {
   const todo = findTodoById(id);
   if (!todo) return;
-
   pendingDeleteId = id;
   modalPreview.textContent = todo.text;
   openDeleteModal();
 }
 
-/** 모달 표시 */
 function openDeleteModal() {
   deleteModal.classList.add('is-visible');
   modalConfirmBtn.focus();
 }
 
-/** 모달 닫기 */
 function closeDeleteModal() {
   deleteModal.classList.remove('is-visible');
   pendingDeleteId = null;
 }
 
-/** 삭제 확인 후 실제 삭제 수행 */
 function confirmDelete() {
   if (pendingDeleteId === null) return;
-
-  todoItems = todoItems.filter((todo) => todo.id !== pendingDeleteId);
-
+  todoItems = todoItems.filter((t) => t.id !== pendingDeleteId);
   closeDeleteModal();
   renderAll();
 }
@@ -238,29 +320,37 @@ function confirmDelete() {
 // ─── 렌더링 ──────────────────────────────────
 
 /**
- * 전체 UI 갱신
+ * 날짜 네비게이터 UI 갱신
+ * 선택 날짜 텍스트 및 '오늘' 뱃지 표시 여부 업데이트
  */
+function renderDateNav() {
+  dateLabel.textContent = formatDateDisplay(selectedDate);
+
+  if (isSelectedDateToday()) {
+    todayBadge.classList.remove('is-hidden');
+  } else {
+    todayBadge.classList.add('is-hidden');
+  }
+}
+
+/** 전체 UI 갱신 */
 function renderAll() {
   renderTodoList();
   renderSummary();
   updateEmptyState();
 }
 
-/**
- * 필터링된 todo 목록을 DOM에 렌더링
- */
+/** 필터링된 목록 렌더링 */
 function renderTodoList() {
   todoList.innerHTML = '';
-
   getFilteredItems().forEach((todo) => {
-    const li = createTodoElement(todo);
-    todoList.appendChild(li);
+    todoList.appendChild(createTodoElement(todo));
   });
 }
 
 /**
  * 단일 todo li 요소 생성
- * @param {{ id: number, text: string, isDone: boolean }} todo
+ * @param {{ id, text, isDone, date }} todo
  * @returns {HTMLLIElement}
  */
 function createTodoElement(todo) {
@@ -282,13 +372,11 @@ function createTodoElement(todo) {
   const editBtn = document.createElement('button');
   editBtn.className   = 'btn-edit';
   editBtn.textContent = '수정';
-  editBtn.setAttribute('aria-label', '수정');
   editBtn.addEventListener('click', () => activateEditMode(todo.id));
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className   = 'btn-delete';
   deleteBtn.textContent = '삭제';
-  deleteBtn.setAttribute('aria-label', '삭제');
   deleteBtn.addEventListener('click', () => requestDeleteTodo(todo.id));
 
   const actionGroup = document.createElement('div');
@@ -300,11 +388,13 @@ function createTodoElement(todo) {
 }
 
 /**
- * 헤더 요약 카운트 갱신 (항상 전체 기준)
+ * 요약 카운트 갱신 — 선택된 날짜 기준
  */
 function renderSummary() {
-  const total     = todoItems.length;
-  const doneCount = todoItems.filter((t) => t.isDone).length;
+  const dateKey   = formatDateKey(selectedDate);
+  const byDate    = todoItems.filter((t) => t.date === dateKey);
+  const total     = byDate.length;
+  const doneCount = byDate.filter((t) => t.isDone).length;
   const remaining = total - doneCount;
 
   summaryTotal.innerHTML  = `전체 <strong>${total}</strong>`;
@@ -313,18 +403,15 @@ function renderSummary() {
 }
 
 /**
- * 빈 상태 표시/숨김
- * 현재 필터 기준으로 표시할 항목이 없을 때 안내 문구를 바꿔서 표시
+ * 빈 상태 표시/숨김 — 필터별 안내 문구 분기
  */
 function updateEmptyState() {
   const filtered = getFilteredItems();
 
   if (filtered.length === 0) {
     emptyState.classList.remove('is-hidden');
-
-    // 필터별 안내 문구
     const messages = {
-      all:    '할 일을 추가해보세요',
+      all:    '이 날의 할 일을 추가해보세요',
       active: '진행 중인 할 일이 없어요',
       done:   '완료된 할 일이 없어요',
     };
@@ -336,25 +423,16 @@ function updateEmptyState() {
 
 // ─── 유틸리티 ────────────────────────────────
 
-/**
- * ID로 todo 객체 찾기
- * @param {number} id
- */
 function findTodoById(id) {
-  return todoItems.find((todo) => todo.id === id);
+  return todoItems.find((t) => t.id === id);
 }
 
-/**
- * 오류 메시지 표시
- * @param {string} message
- */
 function showError(message) {
   errorMsg.textContent = message;
   todoInput.classList.add('is-error');
   todoInput.focus();
 }
 
-/** 오류 상태 초기화 */
 function clearErrorState() {
   errorMsg.textContent = '';
   todoInput.classList.remove('is-error');
