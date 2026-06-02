@@ -346,3 +346,115 @@ body {
   font-size: 2rem;
   color: var(--color-border);
 }
+
+/* =============================================
+   삭제 확인 모달
+   ============================================= */
+
+/* 반투명 배경 오버레이 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 10, 40, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  /* 기본 숨김 — JS에서 .is-visible 클래스로 표시 */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* 모달 표시 상태 */
+.modal-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 모달 카드 */
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+  width: min(360px, calc(100vw - 40px));
+  box-shadow: 0 12px 40px rgba(103, 43, 224, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* 등장 애니메이션 */
+  transform: translateY(10px) scale(0.97);
+  transition: transform 0.22s ease;
+}
+
+.modal-backdrop.is-visible .modal {
+  transform: translateY(0) scale(1);
+}
+
+/* 모달 제목 */
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* 삭제 대상 todo 미리보기 텍스트 */
+.modal-preview {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  line-height: 1.5;
+  word-break: break-all;
+  /* 긴 텍스트는 2줄까지만 표시 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 버튼 영역 */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.btn-modal-cancel {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.btn-modal-cancel:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-modal-confirm {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.btn-modal-confirm:hover {
+  background: #b82e2e;
+}
+
+.btn-modal-cancel:active,
+.btn-modal-confirm:active {
+  transform: scale(0.94);
+}

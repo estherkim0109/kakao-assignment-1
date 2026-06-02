@@ -12,12 +12,21 @@ const summaryTotal   = document.getElementById('summary-total');
 const summaryDone    = document.getElementById('summary-done');
 const summaryRemain  = document.getElementById('summary-remaining');
 
+// 삭제 확인 모달 관련 요소
+const deleteModal      = document.getElementById('delete-modal');
+const modalPreview     = document.getElementById('modal-preview');
+const modalCancelBtn   = document.getElementById('modal-cancel-btn');
+const modalConfirmBtn  = document.getElementById('modal-confirm-btn');
+
 // ─── 상태 관리 ───────────────────────────────
 // 각 todo 객체: { id, text, isDone }
 let todoItems = [];
 
 // 다음 todo에 사용할 고유 ID (단순 증가)
 let nextId = 1;
+
+// 현재 삭제 대기 중인 todo ID (모달이 열려 있는 동안 보관)
+let pendingDeleteId = null;
 
 // ─── 초기화 ──────────────────────────────────
 renderAll();
@@ -34,6 +43,25 @@ todoInput.addEventListener('keydown', (e) => {
 
 // 입력 시 오류 메시지 초기화
 todoInput.addEventListener('input', clearErrorState);
+
+// 모달 — 취소 버튼
+modalCancelBtn.addEventListener('click', closeDeleteModal);
+
+// 모달 — 삭제 확인 버튼
+modalConfirmBtn.addEventListener('click', confirmDelete);
+
+// 모달 — 배경(오버레이) 클릭 시 닫기
+deleteModal.addEventListener('click', (e) => {
+  // 클릭한 대상이 backdrop 자체일 때만 닫음 (모달 카드 클릭은 무시)
+  if (e.target === deleteModal) closeDeleteModal();
+});
+
+// 모달 — ESC 키로 닫기
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && deleteModal.classList.contains('is-visible')) {
+    closeDeleteModal();
+  }
+});
 
 // ─── 기능 함수 ───────────────────────────────
 
@@ -135,11 +163,51 @@ function handleSaveEdit(id, editInput) {
 }
 
 /**
- * Todo 삭제
- * @param {number} id - 대상 todo ID
+ * 삭제 확인 모달 열기
+ * 바로 삭제하지 않고, 대상 ID를 보관한 뒤 모달을 표시
+ * @param {number} id - 삭제 요청한 todo ID
  */
-function deleteTodo(id) {
-  todoItems = todoItems.filter((todo) => todo.id !== id);
+function requestDeleteTodo(id) {
+  const todo = findTodoById(id);
+  if (!todo) return;
+
+  // 삭제 대기 ID 저장
+  pendingDeleteId = id;
+
+  // 모달에 todo 텍스트 미리보기 표시
+  modalPreview.textContent = todo.text;
+
+  // 모달 표시
+  openDeleteModal();
+}
+
+/**
+ * 모달을 화면에 표시
+ */
+function openDeleteModal() {
+  deleteModal.classList.add('is-visible');
+  // 접근성: 모달이 열리면 삭제 확인 버튼에 포커스
+  modalConfirmBtn.focus();
+}
+
+/**
+ * 모달 닫기 및 대기 상태 초기화
+ */
+function closeDeleteModal() {
+  deleteModal.classList.remove('is-visible');
+  pendingDeleteId = null;
+}
+
+/**
+ * 모달에서 삭제 확인 시 실제 삭제 수행
+ */
+function confirmDelete() {
+  if (pendingDeleteId === null) return;
+
+  // 대기 중인 ID로 항목 제거
+  todoItems = todoItems.filter((todo) => todo.id !== pendingDeleteId);
+
+  closeDeleteModal();
   renderAll();
 }
 
@@ -197,12 +265,12 @@ function createTodoElement(todo) {
   editBtn.setAttribute('aria-label', '수정');
   editBtn.addEventListener('click', () => activateEditMode(todo.id));
 
-  // 삭제 버튼
+  // 삭제 버튼 — 클릭 시 바로 삭제 대신 확인 모달 열기
   const deleteBtn = document.createElement('button');
   deleteBtn.className   = 'btn-delete';
   deleteBtn.textContent = '삭제';
   deleteBtn.setAttribute('aria-label', '삭제');
-  deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+  deleteBtn.addEventListener('click', () => requestDeleteTodo(todo.id));
 
   // 버튼 그룹
   const actionGroup = document.createElement('div');
