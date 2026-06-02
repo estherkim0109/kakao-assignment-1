@@ -193,32 +193,49 @@ function toggleDone(id) {
 
 /**
  * 수정 모드 활성화
+ * 텍스트 입력창 + 날짜 선택 input[type=date] 를 함께 표시
  * @param {number} id
  */
 function activateEditMode(id) {
   const listItem = document.querySelector(`[data-id="${id}"]`);
   if (!listItem) return;
 
+  const todo    = findTodoById(id);
   const textEl  = listItem.querySelector('.todo-text');
   const editBtn = listItem.querySelector('.btn-edit');
 
+  // ── 텍스트 편집 input ──
   const editInput = document.createElement('input');
   editInput.type      = 'text';
   editInput.className = 'edit-input';
-  editInput.value     = textEl.textContent;
+  editInput.value     = todo.text;
   editInput.maxLength = 100;
 
+  // ── 날짜 편집 input[type=date] ──
+  const dateInput = document.createElement('input');
+  dateInput.type      = 'date';
+  dateInput.className = 'edit-date-input';
+  dateInput.value     = todo.date; // 현재 저장된 날짜로 초기값 세팅
+
+  // 텍스트 + 날짜를 세로로 묶는 래퍼
+  const editWrapper = document.createElement('div');
+  editWrapper.className = 'edit-wrapper';
+  editWrapper.append(editInput, dateInput);
+
+  // ── 저장 버튼 ──
   const saveBtn = document.createElement('button');
   saveBtn.className   = 'btn-save';
   saveBtn.textContent = '저장';
-  saveBtn.addEventListener('click', () => handleSaveEdit(id, editInput));
+  saveBtn.addEventListener('click', () => handleSaveEdit(id, editInput, dateInput));
 
+  // Enter로 저장, Escape로 취소
   editInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter')  handleSaveEdit(id, editInput);
+    if (e.key === 'Enter')  handleSaveEdit(id, editInput, dateInput);
     if (e.key === 'Escape') renderAll();
   });
 
-  textEl.replaceWith(editInput);
+  // 텍스트 span → 편집 래퍼로 교체, 수정 버튼 → 저장 버튼으로 교체
+  textEl.replaceWith(editWrapper);
   editBtn.replaceWith(saveBtn);
 
   editInput.focus();
@@ -226,17 +243,25 @@ function activateEditMode(id) {
 }
 
 /**
- * 수정 저장
+ * 수정 저장 — 텍스트와 날짜 모두 반영
  * @param {number} id
- * @param {HTMLInputElement} editInput
+ * @param {HTMLInputElement} editInput   - 텍스트 입력창
+ * @param {HTMLInputElement} dateInput   - 날짜 선택 input
  */
-function handleSaveEdit(id, editInput) {
+function handleSaveEdit(id, editInput, dateInput) {
   const newText = editInput.value.trim();
   if (!newText) { editInput.focus(); return; }
 
   const todo = findTodoById(id);
   if (!todo) return;
+
   todo.text = newText;
+
+  // 날짜가 선택되어 있으면 업데이트 (비어 있으면 기존 날짜 유지)
+  if (dateInput.value) {
+    todo.date = dateInput.value;
+  }
+
   renderAll();
 }
 
