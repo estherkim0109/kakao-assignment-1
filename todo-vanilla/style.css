@@ -1,0 +1,348 @@
+/* =============================================
+   CSS 변수 & 기본 리셋
+   ============================================= */
+:root {
+  --color-primary:      #672be0;
+  --color-primary-dark: #4f1fad;
+  --color-primary-soft: #ede6fb;
+  --color-bg:           #f7f6fb;
+  --color-surface:      #ffffff;
+  --color-border:       #e4ddf5;
+  --color-text:         #1a1a2e;
+  --color-text-muted:   #8b8aab;
+  --color-done-text:    #b0aac8;
+  --color-error:        #d93a3a;
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --shadow-card: 0 4px 24px rgba(103, 43, 224, 0.08);
+  --transition:  0.18s ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px 80px;
+}
+
+/* =============================================
+   앱 컨테이너
+   ============================================= */
+.app-wrapper {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* =============================================
+   헤더
+   ============================================= */
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-primary);
+}
+
+.task-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.task-summary strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.task-summary .divider {
+  color: var(--color-border);
+}
+
+/* =============================================
+   입력 영역
+   ============================================= */
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.todo-input {
+  flex: 1;
+  height: 50px;
+  padding: 0 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.todo-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.todo-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.12);
+}
+
+/* 입력 오류 상태 */
+.todo-input.is-error {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 58, 58, 0.1);
+}
+
+.add-btn {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-btn:hover {
+  background: var(--color-primary-dark);
+}
+
+.add-btn:active {
+  transform: scale(0.94);
+}
+
+/* 오류 메시지 */
+.error-msg {
+  font-size: 0.8rem;
+  color: var(--color-error);
+  min-height: 18px;
+  padding-left: 4px;
+  transition: opacity var(--transition);
+}
+
+.error-msg:empty {
+  opacity: 0;
+}
+
+/* =============================================
+   Todo 목록
+   ============================================= */
+.todo-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.todo-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── 개별 Todo 항목 ─── */
+.todo-item {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+  animation: slideIn 0.2s ease;
+  transition: border-color var(--transition);
+}
+
+.todo-item:hover {
+  border-color: var(--color-primary-soft);
+}
+
+/* 완료 상태 항목 */
+.todo-item.is-done {
+  background: #faf9fe;
+  border-color: #ede6fb;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 완료 체크박스 (커스텀) */
+.complete-checkbox {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.complete-checkbox:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 체크 아이콘 */
+.complete-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 6px;
+  width: 5px; height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* Todo 텍스트 */
+.todo-text {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-break: break-all;
+  color: var(--color-text);
+  transition: color var(--transition);
+}
+
+/* 완료 시 취소선 */
+.todo-item.is-done .todo-text {
+  text-decoration: line-through;
+  color: var(--color-done-text);
+}
+
+/* 수정 입력창 (편집 모드에서만 표시) */
+.edit-input {
+  flex: 1;
+  height: 34px;
+  padding: 0 10px;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(103, 43, 224, 0.1);
+}
+
+/* ─── 액션 버튼 그룹 ─── */
+.action-group {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-edit,
+.btn-save,
+.btn-delete {
+  height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+}
+
+.btn-edit {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.btn-edit:hover {
+  background: #ddd1f8;
+}
+
+.btn-save {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-save:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-delete {
+  background: #fdeaea;
+  color: var(--color-error);
+}
+
+.btn-delete:hover {
+  background: #f8c8c8;
+}
+
+.btn-edit:active,
+.btn-save:active,
+.btn-delete:active {
+  transform: scale(0.93);
+}
+
+/* 완료된 항목에서는 수정 버튼 비활성화 */
+.todo-item.is-done .btn-edit {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* =============================================
+   빈 상태
+   ============================================= */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.empty-state.is-hidden {
+  display: none;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  color: var(--color-border);
+}

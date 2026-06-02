@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- 앱 헤더 -->
+    <header class="app-header">
+      <h1 class="app-title">Todo</h1>
+      <!-- 전체 / 완료 / 미완료 카운트 -->
+      <div class="task-summary">
+        <span id="summary-total">전체 <strong>0</strong></span>
+        <span class="divider">·</span>
+        <span id="summary-done">완료 <strong>0</strong></span>
+        <span class="divider">·</span>
+        <span id="summary-remaining">남은 것 <strong>0</strong></span>
+      </div>
+    </header>
+
+    <!-- Todo 입력 영역 -->
+    <section class="input-section">
+      <div class="input-row">
+        <input
+          type="text"
+          id="todo-input"
+          class="todo-input"
+          placeholder="할 일을 입력하세요"
+          maxlength="100"
+          autocomplete="off"
+        />
+        <button id="add-btn" class="add-btn" aria-label="추가">+</button>
+      </div>
+      <!-- 빈 입력 안내 메시지 (기본 숨김) -->
+      <p id="error-msg" class="error-msg" aria-live="polite"></p>
+    </section>
+
+    <!-- Todo 목록 -->
+    <main class="todo-list-section">
+      <ul id="todo-list" class="todo-list"></ul>
+
+      <!-- 할 일이 없을 때 표시 -->
+      <div id="empty-state" class="empty-state">
+        <span class="empty-icon">✦</span>
+        <p>할 일을 추가해보세요</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
