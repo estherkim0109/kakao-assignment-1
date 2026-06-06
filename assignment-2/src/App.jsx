@@ -2,9 +2,8 @@
    App.jsx — 루트 컴포넌트, 전역 상태 관리
    ============================================= */
 import { useState, useCallback, useEffect } from 'react';
-import { getTodayKey, shiftDateByDays, getWeekDays } from './utils/date';
+import { getTodayKey, shiftDateByDays } from './utils/date';
 import WeekView from './components/WeekView';
-import DateNavigator from './components/DateNavigator';
 import TodoInput from './components/TodoInput';
 import FilterTabs from './components/FilterTabs';
 import TodoList from './components/TodoList';
@@ -122,22 +121,6 @@ function App() {
   }, []);
 
   /**
-   * 날짜를 days일 만큼 이동 (DateNavigator 이전/다음 버튼)
-   * 선택 날짜가 현재 주간 뷰를 벗어나면 주간 뷰도 함께 이동
-   * DateNavigator는 memo 처리가 안 되어 있으므로 useCallback 미적용
-   */
-  function handleNavigateDate(days) {
-    const next = shiftDateByDays(selectedDate, days);
-    setSelectedDate(next);
-    setCurrentFilter('all');
-    // 이동한 날짜가 현재 주간 뷰 범위 밖이면 weekBaseDate 동기화
-    const currentWeekDays = getWeekDays(weekBaseDate);
-    if (!currentWeekDays.includes(next)) {
-      setWeekBaseDate(next);
-    }
-  }
-
-  /**
    * 주간 뷰를 days일 만큼 이동 — selectedDate는 변경하지 않음
    * handlePrevWeek / handleNextWeek를 하나로 합쳐 중복 제거
    */
@@ -173,15 +156,6 @@ function App() {
             onPrevWeek={() => handleNavigateWeek(-7)}
             onNextWeek={() => handleNavigateWeek(+7)}
             onDayClick={handleWeekDayClick}
-          />
-        </div>
-
-        {/* 일간 날짜 네비게이터 */}
-        <div className="mb-4">
-          <DateNavigator
-            selectedDate={selectedDate}
-            onPrevDate={() => handleNavigateDate(-1)}
-            onNextDate={() => handleNavigateDate(+1)}
           />
         </div>
 
