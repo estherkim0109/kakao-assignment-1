@@ -1,7 +1,7 @@
 /* =============================================
    WeekView.jsx — 주간 뷰 (월~일 7칸)
    ============================================= */
-import { getWeekDays, isToday } from '../utils/date';
+import { getWeekDays, getTodayKey } from '../utils/date';
 import WeekDayCell from './WeekDayCell';
 
 // 주간 뷰 요일 이름 — 월요일 시작
@@ -22,16 +22,18 @@ function getWeekRangeLabel(weekDays) {
 
 /**
  * props:
- *   weekBaseDate  — 주간 뷰 기준 날짜 ('YYYY-MM-DD')
- *   selectedDate  — 일간 뷰에서 선택된 날짜 ('YYYY-MM-DD')
- *   todoItems     — 전체 todo 배열 (날짜별 카운트 계산용)
- *   onPrevWeek    — 이전 주 버튼 클릭 시 호출
- *   onNextWeek    — 다음 주 버튼 클릭 시 호출
- *   onDayClick    — 날짜 셀 클릭 시 호출 (dateKey를 인자로 전달)
+ *   weekBaseDate       — 주간 뷰 기준 날짜 ('YYYY-MM-DD')
+ *   selectedDate       — 일간 뷰에서 선택된 날짜 ('YYYY-MM-DD')
+ *   todoSummaryByDate  — 날짜별 todo 요약 { [dateKey]: { total, active } }
+ *                        todoItems 전체 대신 집계된 데이터만 받아 WeekView의 의존성 최소화
+ *   onPrevWeek         — 이전 주 버튼 클릭 시 호출
+ *   onNextWeek         — 다음 주 버튼 클릭 시 호출
+ *   onDayClick         — 날짜 셀 클릭 시 호출 (dateKey를 인자로 전달)
  */
-function WeekView({ weekBaseDate, selectedDate, todoItems, onPrevWeek, onNextWeek, onDayClick }) {
-  // weekBaseDate가 속한 주의 날짜 키 배열 (월~일)
+function WeekView({ weekBaseDate, selectedDate, todoSummaryByDate, onPrevWeek, onNextWeek, onDayClick }) {
   const weekDays = getWeekDays(weekBaseDate);
+  // 오늘 날짜를 map 바깥에서 한 번만 계산 — 셀마다 new Date() 생성 방지
+  const todayKey = getTodayKey();
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3">
@@ -68,12 +70,10 @@ function WeekView({ weekBaseDate, selectedDate, todoItems, onPrevWeek, onNextWee
       {/* 7개 날짜 셀 */}
       <ul className="flex gap-1">
         {weekDays.map((dateKey, i) => {
-          // 해당 날짜의 todo 통계 계산
-          const dayTodos    = todoItems.filter(t => t.date === dateKey);
-          const totalCount  = dayTodos.length;
-          const activeCount = dayTodos.filter(t => !t.isDone).length;
-          // 1개 이상 있고 전부 완료된 경우에만 allDone
-          const allDone     = totalCount > 0 && activeCount === 0;
+          // 집계된 요약 데이터 참조 — todoItems 전체 순회 불필요
+          const summary     = todoSummaryByDate[dateKey] || { total: 0, active: 0 };
+          const activeCount = summary.active;
+          const allDone     = summary.total > 0 && summary.active === 0;
 
           return (
             <WeekDayCell
@@ -82,7 +82,7 @@ function WeekView({ weekBaseDate, selectedDate, todoItems, onPrevWeek, onNextWee
               date={dateKey}
               activeCount={activeCount}
               allDone={allDone}
-              isToday={isToday(dateKey)}
+              isToday={dateKey === todayKey}
               isSelected={dateKey === selectedDate}
               onClick={() => onDayClick(dateKey)}
             />

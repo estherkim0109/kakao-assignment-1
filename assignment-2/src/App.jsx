@@ -71,6 +71,15 @@ function App() {
   const itemsForDate = todoItems.filter(t => t.date === selectedDate);
   const visibleItems = applyFilter(itemsForDate, currentFilter);
 
+  // 날짜별 todo 요약 집계 — WeekView에 todoItems 전체 대신 요약만 전달
+  // todoItems 한 번 순회로 모든 날짜의 { total, active } 를 한꺼번에 계산
+  const todoSummaryByDate = todoItems.reduce((acc, t) => {
+    if (!acc[t.date]) acc[t.date] = { total: 0, active: 0 };
+    acc[t.date].total++;
+    if (!t.isDone) acc[t.date].active++;
+    return acc;
+  }, {});
+
   // ─── Side Effects ───────────────────────────
   // todoItems 변경 시마다 로컬스토리지에 자동 저장
   useEffect(() => {
@@ -128,14 +137,12 @@ function App() {
     }
   }
 
-  /** 이전 주로 이동 — selectedDate는 변경하지 않음 */
-  const handlePrevWeek = useCallback(() => {
-    setWeekBaseDate(prev => shiftDateByDays(prev, -7));
-  }, []);
-
-  /** 다음 주로 이동 */
-  const handleNextWeek = useCallback(() => {
-    setWeekBaseDate(prev => shiftDateByDays(prev, +7));
+  /**
+   * 주간 뷰를 days일 만큼 이동 — selectedDate는 변경하지 않음
+   * handlePrevWeek / handleNextWeek를 하나로 합쳐 중복 제거
+   */
+  const handleNavigateWeek = useCallback((days) => {
+    setWeekBaseDate(prev => shiftDateByDays(prev, days));
   }, []);
 
   /**
@@ -162,9 +169,9 @@ function App() {
           <WeekView
             weekBaseDate={weekBaseDate}
             selectedDate={selectedDate}
-            todoItems={todoItems}
-            onPrevWeek={handlePrevWeek}
-            onNextWeek={handleNextWeek}
+            todoSummaryByDate={todoSummaryByDate}
+            onPrevWeek={() => handleNavigateWeek(-7)}
+            onNextWeek={() => handleNavigateWeek(+7)}
             onDayClick={handleWeekDayClick}
           />
         </div>
