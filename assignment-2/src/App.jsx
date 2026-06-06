@@ -2,6 +2,8 @@
    App.jsx — 루트 컴포넌트, 전역 상태 관리
    ============================================= */
 import { useState, useRef, useEffect } from 'react';
+import { getTodayKey, shiftDateByDays } from './utils/date';
+import DateNavigator from './components/DateNavigator';
 import TodoInput from './components/TodoInput';
 import FilterTabs from './components/FilterTabs';
 import TodoList from './components/TodoList';
@@ -15,18 +17,9 @@ const EMPTY_MESSAGES = {
   done:   '완료된 할 일이 없어요',
 };
 
-/** 오늘 날짜를 'YYYY-MM-DD' 문자열로 반환 */
-function getTodayKey() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 /**
  * 날짜별 todo 목록에 필터를 적용해 반환
- * 'all'일 때는 배열을 두 번 순회하는 대신 reduce로 한 번에 분리 후 합침
+ * 'all'일 때는 reduce로 한 번에 분리 후 합침 (이중 순회 방지)
  */
 function applyFilter(items, filter) {
   if (filter === 'active') return items.filter(t => !t.isDone);
@@ -43,14 +36,6 @@ function applyFilter(items, filter) {
   return [...active, ...done];
 }
 
-/** 'YYYY-MM-DD' 문자열을 한국어 표시 형식으로 변환 (예: "2025년 6월 7일 (토)") */
-function formatDateDisplay(dateKey) {
-  const [y, m, d] = dateKey.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${y}년 ${m}월 ${d}일 (${dayNames[date.getDay()]})`;
-}
-
 function App() {
   // ─── State ──────────────────────────────────
   // 전체 todo 목록 — localStorage에서 초기값 복원
@@ -63,15 +48,14 @@ function App() {
     }
   });
 
-  // 현재 선택된 날짜 — DateNavigator 구현 시 setter 추가 예정
-  const [selectedDate] = useState(getTodayKey);
+  // 현재 선택된 날짜 ('YYYY-MM-DD') — 오늘로 초기화
+  const [selectedDate, setSelectedDate] = useState(getTodayKey);
 
   // 현재 선택된 필터 ('all' | 'active' | 'done')
   const [currentFilter, setCurrentFilter] = useState('all');
 
   // ─── 파생 데이터 ─────────────────────────────
   // nextId를 todoItems에서 직접 파생 — 별도 ref/localStorage 불필요
-  // reduce로 순회해 가장 큰 id + 1을 사용 (spread 방식은 배열이 클 때 스택 오버플로 위험)
   const nextId = todoItems.reduce((max, t) => Math.max(max, t.id), 0) + 1;
 
   // 선택된 날짜의 todo를 현재 필터로 걸러 표시 목록 생성
@@ -96,7 +80,7 @@ function App() {
       id:     nextId,
       text,
       isDone: false,
-      date:   selectedDate,
+      date:   selectedDate, // 선택된 날짜에 귀속
     };
     setTodoItems(prev => [...prev, newTodo]);
   }
@@ -128,16 +112,39 @@ function App() {
     setCurrentFilter(filter);
   }
 
+  /**
+   * 이전 날짜로 이동
+   * 날짜가 바뀌면 필터를 '전체'로 초기화 — 새 날짜의 전체 목록을 보여주는 것이 자연스러움
+   */
+  function handlePrevDate() {
+    setSelectedDate(prev => shiftDateByDays(prev, -1));
+    setCurrentFilter('all');
+  }
+
+  /** 다음 날짜로 이동 */
+  function handleNextDate() {
+    setSelectedDate(prev => shiftDateByDays(prev, +1));
+    setCurrentFilter('all');
+  }
+
   // ─── 렌더링 ─────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto py-8 px-4">
 
-        {/* 헤더 — 선택된 날짜 표시 */}
-        <header className="mb-6">
+        {/* 앱 제목 */}
+        <header className="mb-4">
           <h1 className="text-2xl font-bold text-gray-800">Todo</h1>
-          <p className="text-sm text-gray-400 mt-1">{formatDateDisplay(selectedDate)}</p>
         </header>
+
+        {/* 일간 날짜 네비게이터 */}
+        <div className="mb-4">
+          <DateNavigator
+            selectedDate={selectedDate}
+            onPrevDate={handlePrevDate}
+            onNextDate={handleNextDate}
+          />
+        </div>
 
         {/* todo 입력 영역 */}
         <TodoInput onAdd={handleAddTodo} />
