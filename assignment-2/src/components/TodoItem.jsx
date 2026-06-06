@@ -123,8 +123,6 @@ const TodoItem = memo(function TodoItem({ todo, onToggle, onSave, onDelete }) {
       </div>
     </li>
   );
-}
-
 }); // memo 닫기
 
 export default TodoItem;
