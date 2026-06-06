@@ -3,11 +3,14 @@
    여러 컴포넌트에서 공유하므로 별도 모듈로 분리
    ============================================= */
 
+// 요일 이름 — 매 호출마다 생성하지 않도록 모듈 상수로 선언
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
 /**
  * Date 객체 → 'YYYY-MM-DD' 문자열
- * 내부 헬퍼로 사용; 외부에서는 shiftDateByDays 등을 통해 간접 사용
+ * WeekView 등 다른 컴포넌트에서도 사용하므로 export
  */
-function formatDateKey(date) {
+export function formatDateKey(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -27,8 +30,7 @@ export function formatDateDisplay(dateKey) {
   // split으로 파싱해 Date 생성 — month는 0-indexed이므로 m - 1
   const [y, m, d] = dateKey.split('-').map(Number);
   const date = new Date(y, m - 1, d);
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${y}년 ${m}월 ${d}일 (${dayNames[date.getDay()]})`;
+  return `${y}년 ${m}월 ${d}일 (${DAY_NAMES[date.getDay()]})`;
 }
 
 /**

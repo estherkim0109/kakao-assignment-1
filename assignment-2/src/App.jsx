@@ -113,17 +113,12 @@ function App() {
   }
 
   /**
-   * 이전 날짜로 이동
+   * 날짜를 days일 만큼 이동
    * 날짜가 바뀌면 필터를 '전체'로 초기화 — 새 날짜의 전체 목록을 보여주는 것이 자연스러움
+   * handlePrevDate / handleNextDate를 하나로 합쳐 로직 중복 제거
    */
-  function handlePrevDate() {
-    setSelectedDate(prev => shiftDateByDays(prev, -1));
-    setCurrentFilter('all');
-  }
-
-  /** 다음 날짜로 이동 */
-  function handleNextDate() {
-    setSelectedDate(prev => shiftDateByDays(prev, +1));
+  function handleNavigateDate(days) {
+    setSelectedDate(prev => shiftDateByDays(prev, days));
     setCurrentFilter('all');
   }
 
@@ -141,8 +136,8 @@ function App() {
         <div className="mb-4">
           <DateNavigator
             selectedDate={selectedDate}
-            onPrevDate={handlePrevDate}
-            onNextDate={handleNextDate}
+            onPrevDate={() => handleNavigateDate(-1)}
+            onNextDate={() => handleNavigateDate(+1)}
           />
         </div>
 
