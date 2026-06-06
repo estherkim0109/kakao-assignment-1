@@ -1,7 +1,7 @@
 /* =============================================
    TodoItem.jsx — 개별 todo 항목 (일반 뷰 / 편집 뷰)
    ============================================= */
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 /**
  * props:
@@ -10,7 +10,11 @@ import { useState } from 'react';
  *   onSave(id, newText, newDate)  — 수정 저장
  *   onDelete(id)                  — 삭제
  */
-function TodoItem({ todo, onToggle, onSave, onDelete }) {
+/**
+ * memo로 감싸 props가 바뀐 항목만 리렌더
+ * App에서 useCallback으로 핸들러 참조를 안정적으로 유지해야 실제 효과가 있음
+ */
+const TodoItem = memo(function TodoItem({ todo, onToggle, onSave, onDelete }) {
   // draft가 null이면 일반 뷰, 객체이면 편집 뷰
   // — isEditing/editText/editDate 세 state를 하나로 통합해 상태 불일치를 방지
   const [draft, setDraft] = useState(null);
@@ -120,5 +124,7 @@ function TodoItem({ todo, onToggle, onSave, onDelete }) {
     </li>
   );
 }
+
+}); // memo 닫기
 
 export default TodoItem;

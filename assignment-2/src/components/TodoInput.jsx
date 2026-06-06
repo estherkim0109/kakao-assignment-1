@@ -8,7 +8,7 @@ import { useState, useRef } from 'react';
  *   onAdd(text) — 유효한 텍스트 입력 시 호출
  */
 function TodoInput({ onAdd }) {
-  const [inputValue, setInputValue]   = useState('');
+  const [inputValue, setInputValue]     = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   // 한글 등 IME 조합 중 여부를 추적
@@ -38,6 +38,10 @@ function TodoInput({ onAdd }) {
     if (errorMessage) setErrorMessage('');
   }
 
+  // 인라인 화살표 대신 이름 있는 함수로 분리 — 다른 핸들러와 일관성 유지
+  function handleCompositionStart() { isComposingRef.current = true; }
+  function handleCompositionEnd()   { isComposingRef.current = false; }
+
   return (
     <div>
       <div className="flex gap-2">
@@ -46,8 +50,8 @@ function TodoInput({ onAdd }) {
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onCompositionStart={() => { isComposingRef.current = true; }}
-          onCompositionEnd={() => { isComposingRef.current = false; }}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           placeholder="할 일을 입력하세요"
           maxLength={100}
           className={`flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors ${

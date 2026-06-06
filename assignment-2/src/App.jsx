@@ -1,7 +1,7 @@
 /* =============================================
    App.jsx — 루트 컴포넌트, 전역 상태 관리
    ============================================= */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getTodayKey, shiftDateByDays } from './utils/date';
 import DateNavigator from './components/DateNavigator';
 import TodoInput from './components/TodoInput';
@@ -55,72 +55,61 @@ function App() {
   const [currentFilter, setCurrentFilter] = useState('all');
 
   // ─── 파생 데이터 ─────────────────────────────
-  // nextId를 todoItems에서 직접 파생 — 별도 ref/localStorage 불필요
-  const nextId = todoItems.reduce((max, t) => Math.max(max, t.id), 0) + 1;
-
   // 선택된 날짜의 todo를 현재 필터로 걸러 표시 목록 생성
   const itemsForDate = todoItems.filter(t => t.date === selectedDate);
   const visibleItems = applyFilter(itemsForDate, currentFilter);
 
   // ─── Side Effects ───────────────────────────
-  // 마운트 시 초기 로드 직후의 불필요한 저장을 건너뜀
-  const isFirstRender = useRef(true);
+  // todoItems 변경 시마다 로컬스토리지에 자동 저장
+  // 마운트 시에도 실행되지만 초기값과 동일한 데이터를 쓰는 no-op이므로 무해함
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
     localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(todoItems));
   }, [todoItems]);
 
   // ─── 핸들러 ─────────────────────────────────
-  /** 새 todo 추가 — 현재 선택된 날짜로 생성 */
-  function handleAddTodo(text) {
-    const newTodo = {
-      id:     nextId,
-      text,
-      isDone: false,
-      date:   selectedDate, // 선택된 날짜에 귀속
-    };
-    setTodoItems(prev => [...prev, newTodo]);
-  }
+  // useCallback: React.memo로 감싼 TodoItem이 불필요하게 리렌더되지 않도록
+  // 각 핸들러의 참조를 안정적으로 유지
+
+  /**
+   * 새 todo 추가 — 현재 선택된 날짜로 생성
+   * nextId를 함수형 업데이트 내부에서 계산 → 렌더마다 reduce 실행 불필요
+   */
+  const handleAddTodo = useCallback((text) => {
+    setTodoItems(prev => {
+      const newId = prev.reduce((max, t) => Math.max(max, t.id), 0) + 1;
+      return [...prev, { id: newId, text, isDone: false, date: selectedDate }];
+    });
+  }, [selectedDate]); // selectedDate가 바뀌면 새 함수 생성
 
   /** 완료 여부 토글 */
-  function handleToggleDone(id) {
+  const handleToggleDone = useCallback((id) => {
     setTodoItems(prev =>
       prev.map(t => (t.id === id ? { ...t, isDone: !t.isDone } : t))
     );
-  }
+  }, []); // setTodoItems는 안정적인 참조 → 빈 deps
 
-  /** 수정 저장 — 텍스트와 날짜 모두 변경 가능
-   * 날짜가 바뀌면 해당 todo는 변경된 날짜의 목록에 표시됨 */
-  function handleSaveEdit(id, newText, newDate) {
+  /** 수정 저장 — 텍스트와 날짜 모두 변경 가능 */
+  const handleSaveEdit = useCallback((id, newText, newDate) => {
     setTodoItems(prev =>
       prev.map(t =>
         t.id === id ? { ...t, text: newText, date: newDate } : t
       )
     );
-  }
+  }, []);
 
   /** todo 삭제 */
-  function handleDeleteTodo(id) {
+  const handleDeleteTodo = useCallback((id) => {
     setTodoItems(prev => prev.filter(t => t.id !== id));
-  }
-
-  /** 필터 탭 변경 */
-  function handleFilterChange(filter) {
-    setCurrentFilter(filter);
-  }
+  }, []);
 
   /**
    * 날짜를 days일 만큼 이동
-   * 날짜가 바뀌면 필터를 '전체'로 초기화 — 새 날짜의 전체 목록을 보여주는 것이 자연스러움
-   * handlePrevDate / handleNextDate를 하나로 합쳐 로직 중복 제거
+   * 날짜가 바뀌면 필터를 '전체'로 초기화
    */
-  function handleNavigateDate(days) {
+  const handleNavigateDate = useCallback((days) => {
     setSelectedDate(prev => shiftDateByDays(prev, days));
     setCurrentFilter('all');
-  }
+  }, []);
 
   // ─── 렌더링 ─────────────────────────────────
   return (
@@ -144,11 +133,11 @@ function App() {
         {/* todo 입력 영역 */}
         <TodoInput onAdd={handleAddTodo} />
 
-        {/* 필터 탭 */}
+        {/* 필터 탭 — handleFilterChange wrapper 제거, setCurrentFilter 직접 전달 */}
         <div className="mt-4">
           <FilterTabs
             currentFilter={currentFilter}
-            onFilterChange={handleFilterChange}
+            onFilterChange={setCurrentFilter}
           />
         </div>
 
