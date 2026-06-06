@@ -8,6 +8,13 @@ import TodoList from './components/TodoList';
 
 const STORAGE_KEY_ITEMS = 'todo_items';
 
+// 필터별 빈 상태 메시지 — 내용이 변하지 않으므로 모듈 상수로 선언
+const EMPTY_MESSAGES = {
+  all:    '이 날의 할 일을 추가해보세요',
+  active: '진행 중인 할 일이 없어요',
+  done:   '완료된 할 일이 없어요',
+};
+
 /** 오늘 날짜를 'YYYY-MM-DD' 문자열로 반환 */
 function getTodayKey() {
   const d = new Date();
@@ -15,6 +22,25 @@ function getTodayKey() {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/**
+ * 날짜별 todo 목록에 필터를 적용해 반환
+ * 'all'일 때는 배열을 두 번 순회하는 대신 reduce로 한 번에 분리 후 합침
+ */
+function applyFilter(items, filter) {
+  if (filter === 'active') return items.filter(t => !t.isDone);
+  if (filter === 'done')   return items.filter(t =>  t.isDone);
+
+  // 'all' — 진행 중을 위로, 완료를 아래로 정렬
+  const { active, done } = items.reduce(
+    (acc, t) => {
+      (t.isDone ? acc.done : acc.active).push(t);
+      return acc;
+    },
+    { active: [], done: [] }
+  );
+  return [...active, ...done];
 }
 
 /** 'YYYY-MM-DD' 문자열을 한국어 표시 형식으로 변환 (예: "2025년 6월 7일 (토)") */
@@ -50,24 +76,7 @@ function App() {
 
   // 선택된 날짜의 todo를 현재 필터로 걸러 표시 목록 생성
   const itemsForDate = todoItems.filter(t => t.date === selectedDate);
-  const visibleItems = (() => {
-    switch (currentFilter) {
-      case 'active': return itemsForDate.filter(t => !t.isDone);
-      case 'done':   return itemsForDate.filter(t =>  t.isDone);
-      default:       // 'all' — 진행 중을 위로, 완료를 아래로 정렬
-        return [
-          ...itemsForDate.filter(t => !t.isDone),
-          ...itemsForDate.filter(t =>  t.isDone),
-        ];
-    }
-  })();
-
-  // 필터별 빈 상태 메시지
-  const emptyMessages = {
-    all:    '이 날의 할 일을 추가해보세요',
-    active: '진행 중인 할 일이 없어요',
-    done:   '완료된 할 일이 없어요',
-  };
+  const visibleItems = applyFilter(itemsForDate, currentFilter);
 
   // ─── Side Effects ───────────────────────────
   // 마운트 시 초기 로드 직후의 불필요한 저장을 건너뜀
@@ -145,7 +154,7 @@ function App() {
         <div className="mt-3">
           <TodoList
             items={visibleItems}
-            emptyMessage={emptyMessages[currentFilter]}
+            emptyMessage={EMPTY_MESSAGES[currentFilter]}
             onToggle={handleToggleDone}
             onSave={handleSaveEdit}
             onDelete={handleDeleteTodo}

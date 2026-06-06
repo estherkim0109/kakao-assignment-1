@@ -3,10 +3,12 @@
    ============================================= */
 
 // 탭 목록을 상수로 분리해 렌더 함수가 깔끔해짐
+// value는 App의 currentFilter와 대응되는 식별자
+// key 대신 value를 사용 — React의 예약 prop 이름 key와 혼동 방지
 const FILTERS = [
-  { key: 'all',    label: '전체' },
-  { key: 'active', label: '진행 중' },
-  { key: 'done',   label: '완료' },
+  { value: 'all',    label: '전체' },
+  { value: 'active', label: '진행 중' },
+  { value: 'done',   label: '완료' },
 ];
 
 /**
@@ -18,15 +20,15 @@ function FilterTabs({ currentFilter, onFilterChange }) {
   return (
     // role="tablist" — 스크린리더에 탭 그룹임을 알림
     <div role="tablist" className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-      {FILTERS.map(({ key, label }) => {
-        const isActive = currentFilter === key;
+      {FILTERS.map(({ value, label }) => {
+        const isActive = currentFilter === value;
         return (
           <button
-            key={key}
+            key={value}
             role="tab"
             type="button"
             aria-selected={isActive}
-            onClick={() => onFilterChange(key)}
+            onClick={() => onFilterChange(value)}
             className={`flex-1 py-1.5 text-sm rounded-md text-center transition-colors ${
               isActive
                 ? 'bg-white text-blue-600 font-medium shadow-sm'  // 선택된 탭
