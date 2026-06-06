@@ -13,11 +13,15 @@ const WEEK_DAY_NAMES = ['월', '화', '수', '목', '금', '토', '일'];
  * 다른 달: "5월 26일 ~ 6월 1일"
  */
 function getWeekRangeLabel(weekDays) {
-  const [, fm, fd] = weekDays[0].split('-').map(Number); // 월요일
-  const [, lm, ld] = weekDays[6].split('-').map(Number); // 일요일
-  return fm === lm
-    ? `${fm}월 ${fd}일 ~ ${ld}일`
-    : `${fm}월 ${fd}일 ~ ${lm}월 ${ld}일`;
+  const [fy, fm, fd] = weekDays[0].split('-').map(Number); // 월요일
+  const [ly, lm, ld] = weekDays[6].split('-').map(Number); // 일요일
+
+  // 연도가 다른 경우 (연말~연초 주): 양쪽에 연도 표시
+  if (fy !== ly) return `${fy}년 ${fm}월 ${fd}일 ~ ${ly}년 ${lm}월 ${ld}일`;
+  // 같은 달: 연도 + 월을 앞에 한 번만
+  if (fm === lm) return `${fy}년 ${fm}월 ${fd}일 ~ ${ld}일`;
+  // 다른 달: 연도를 앞에 한 번만
+  return `${fy}년 ${fm}월 ${fd}일 ~ ${lm}월 ${ld}일`;
 }
 
 /**
