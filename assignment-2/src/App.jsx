@@ -5,9 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import TodoInput from './components/TodoInput';
 import TodoList from './components/TodoList';
 
-// 로컬스토리지 키
-const STORAGE_KEY_ITEMS  = 'todo_items';
-const STORAGE_KEY_NEXTID = 'todo_next_id';
+const STORAGE_KEY_ITEMS = 'todo_items';
 
 /** 오늘 날짜를 'YYYY-MM-DD' 문자열로 반환 */
 function getTodayKey() {
@@ -21,7 +19,6 @@ function getTodayKey() {
 /** 'YYYY-MM-DD' 문자열을 한국어 표시 형식으로 변환 (예: "2025년 6월 7일 (토)") */
 function formatDateDisplay(dateKey) {
   const [y, m, d] = dateKey.split('-').map(Number);
-  // Date 생성자에서 month는 0-indexed이므로 m - 1
   const date = new Date(y, m - 1, d);
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   return `${y}년 ${m}월 ${d}일 (${dayNames[date.getDay()]})`;
@@ -35,51 +32,41 @@ function App() {
       const saved = localStorage.getItem(STORAGE_KEY_ITEMS);
       return saved ? JSON.parse(saved) : [];
     } catch {
-      // 파싱 실패 시 빈 배열로 시작
       return [];
     }
   });
 
-  // 현재 선택된 날짜 — 이후 DateNavigator 연동 시 setter 사용
-  const [selectedDate, setSelectedDate] = useState(getTodayKey);
-
-  // ─── Refs ───────────────────────────────────
-  // nextId는 렌더링에 영향을 주지 않으므로 ref로 관리
-  // useRef는 lazy initializer를 지원하지 않아 null 체크로 초기화
-  const nextIdRef = useRef(null);
-  if (nextIdRef.current === null) {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_NEXTID);
-      nextIdRef.current = saved ? Number(saved) : 1;
-    } catch {
-      nextIdRef.current = 1;
-    }
-  }
-
-  // ─── Side Effects ───────────────────────────
-  // todoItems가 변경될 때마다 로컬스토리지에 자동 저장
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(todoItems));
-  }, [todoItems]);
+  // 현재 선택된 날짜 — DateNavigator 구현 시 setter 추가 예정
+  const [selectedDate] = useState(getTodayKey);
 
   // ─── 파생 데이터 ─────────────────────────────
-  /** 선택된 날짜에 해당하는 todo만 반환 */
-  function getItemsForSelectedDate() {
-    return todoItems.filter(t => t.date === selectedDate);
-  }
+  // nextId를 todoItems에서 직접 파생 — 별도 ref/localStorage 불필요
+  // reduce로 순회해 가장 큰 id + 1을 사용 (spread 방식은 배열이 클 때 스택 오버플로 위험)
+  const nextId = todoItems.reduce((max, t) => Math.max(max, t.id), 0) + 1;
+
+  // 선택된 날짜에 해당하는 todo만 필터링
+  const visibleItems = todoItems.filter(t => t.date === selectedDate);
+
+  // ─── Side Effects ───────────────────────────
+  // 마운트 시 초기 로드 직후의 불필요한 저장을 건너뜀
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(todoItems));
+  }, [todoItems]);
 
   // ─── 핸들러 ─────────────────────────────────
   /** 새 todo 추가 — 현재 선택된 날짜로 생성 */
   function handleAddTodo(text) {
     const newTodo = {
-      id:     nextIdRef.current,
+      id:     nextId,
       text,
       isDone: false,
       date:   selectedDate,
     };
-    // id 증가 후 즉시 저장 (todoItems useEffect와 별도로 관리)
-    nextIdRef.current += 1;
-    localStorage.setItem(STORAGE_KEY_NEXTID, String(nextIdRef.current));
     setTodoItems(prev => [...prev, newTodo]);
   }
 
@@ -122,7 +109,8 @@ function App() {
         {/* todo 목록 */}
         <div className="mt-4">
           <TodoList
-            items={getItemsForSelectedDate()}
+            items={visibleItems}
+            emptyMessage="이 날의 할 일을 추가해보세요"
             onToggle={handleToggleDone}
             onSave={handleSaveEdit}
             onDelete={handleDeleteTodo}

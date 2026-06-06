@@ -11,31 +11,27 @@ import { useState } from 'react';
  *   onDelete(id)                  — 삭제
  */
 function TodoItem({ todo, onToggle, onSave, onDelete }) {
-  // 편집 모드 여부 — TodoItem이 직접 관리
-  const [isEditing, setIsEditing] = useState(false);
-  // 편집 중인 텍스트와 날짜 — 편집 시작 시 현재 값으로 초기화
-  const [editText, setEditText] = useState('');
-  const [editDate, setEditDate] = useState('');
+  // draft가 null이면 일반 뷰, 객체이면 편집 뷰
+  // — isEditing/editText/editDate 세 state를 하나로 통합해 상태 불일치를 방지
+  const [draft, setDraft] = useState(null);
 
-  /** 편집 모드 진입 — 입력창을 현재 값으로 초기화 */
+  /** 편집 모드 진입 — 현재 todo 값으로 draft 초기화 */
   function handleEditStart() {
-    setEditText(todo.text);
-    setEditDate(todo.date);
-    setIsEditing(true);
+    setDraft({ text: todo.text, date: todo.date });
   }
 
-  /** 편집 취소 — 값을 되돌리지 않아도 됨 (다음 진입 시 초기화됨) */
+  /** 편집 취소 */
   function handleCancelEdit() {
-    setIsEditing(false);
+    setDraft(null);
   }
 
   /** 편집 저장 — 텍스트가 빈 문자열이면 저장하지 않음 */
   function handleSave() {
-    const trimmed = editText.trim();
+    const trimmed = draft.text.trim();
     if (!trimmed) return;
     // 날짜가 지워진 경우 원래 날짜 유지
-    onSave(todo.id, trimmed, editDate || todo.date);
-    setIsEditing(false);
+    onSave(todo.id, trimmed, draft.date || todo.date);
+    setDraft(null);
   }
 
   /** 텍스트 입력창 키 이벤트 — Enter: 저장, Escape: 취소 */
@@ -45,14 +41,14 @@ function TodoItem({ todo, onToggle, onSave, onDelete }) {
   }
 
   // ─── 편집 뷰 ────────────────────────────────
-  if (isEditing) {
+  if (draft !== null) {
     return (
       <li className="flex items-center gap-2 bg-white border border-blue-300 rounded-lg px-3 py-2">
         {/* 할 일 텍스트 수정 입력창 */}
         <input
           type="text"
-          value={editText}
-          onChange={e => setEditText(e.target.value)}
+          value={draft.text}
+          onChange={e => setDraft(prev => ({ ...prev, text: e.target.value }))}
           onKeyDown={handleKeyDown}
           autoFocus
           maxLength={100}
@@ -61,8 +57,8 @@ function TodoItem({ todo, onToggle, onSave, onDelete }) {
         {/* 날짜 변경 입력창 — 변경 시 해당 날짜의 목록으로 이동 */}
         <input
           type="date"
-          value={editDate}
-          onChange={e => setEditDate(e.target.value)}
+          value={draft.date}
+          onChange={e => setDraft(prev => ({ ...prev, date: e.target.value }))}
           className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <button
