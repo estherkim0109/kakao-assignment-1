@@ -3,6 +3,7 @@
    ============================================= */
 import { useState, useRef, useEffect } from 'react';
 import TodoInput from './components/TodoInput';
+import FilterTabs from './components/FilterTabs';
 import TodoList from './components/TodoList';
 
 const STORAGE_KEY_ITEMS = 'todo_items';
@@ -39,13 +40,34 @@ function App() {
   // 현재 선택된 날짜 — DateNavigator 구현 시 setter 추가 예정
   const [selectedDate] = useState(getTodayKey);
 
+  // 현재 선택된 필터 ('all' | 'active' | 'done')
+  const [currentFilter, setCurrentFilter] = useState('all');
+
   // ─── 파생 데이터 ─────────────────────────────
   // nextId를 todoItems에서 직접 파생 — 별도 ref/localStorage 불필요
   // reduce로 순회해 가장 큰 id + 1을 사용 (spread 방식은 배열이 클 때 스택 오버플로 위험)
   const nextId = todoItems.reduce((max, t) => Math.max(max, t.id), 0) + 1;
 
-  // 선택된 날짜에 해당하는 todo만 필터링
-  const visibleItems = todoItems.filter(t => t.date === selectedDate);
+  // 선택된 날짜의 todo를 현재 필터로 걸러 표시 목록 생성
+  const itemsForDate = todoItems.filter(t => t.date === selectedDate);
+  const visibleItems = (() => {
+    switch (currentFilter) {
+      case 'active': return itemsForDate.filter(t => !t.isDone);
+      case 'done':   return itemsForDate.filter(t =>  t.isDone);
+      default:       // 'all' — 진행 중을 위로, 완료를 아래로 정렬
+        return [
+          ...itemsForDate.filter(t => !t.isDone),
+          ...itemsForDate.filter(t =>  t.isDone),
+        ];
+    }
+  })();
+
+  // 필터별 빈 상태 메시지
+  const emptyMessages = {
+    all:    '이 날의 할 일을 추가해보세요',
+    active: '진행 중인 할 일이 없어요',
+    done:   '완료된 할 일이 없어요',
+  };
 
   // ─── Side Effects ───────────────────────────
   // 마운트 시 초기 로드 직후의 불필요한 저장을 건너뜀
@@ -92,6 +114,11 @@ function App() {
     setTodoItems(prev => prev.filter(t => t.id !== id));
   }
 
+  /** 필터 탭 변경 */
+  function handleFilterChange(filter) {
+    setCurrentFilter(filter);
+  }
+
   // ─── 렌더링 ─────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
@@ -106,11 +133,19 @@ function App() {
         {/* todo 입력 영역 */}
         <TodoInput onAdd={handleAddTodo} />
 
-        {/* todo 목록 */}
+        {/* 필터 탭 */}
         <div className="mt-4">
+          <FilterTabs
+            currentFilter={currentFilter}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+
+        {/* todo 목록 */}
+        <div className="mt-3">
           <TodoList
             items={visibleItems}
-            emptyMessage="이 날의 할 일을 추가해보세요"
+            emptyMessage={emptyMessages[currentFilter]}
             onToggle={handleToggleDone}
             onSave={handleSaveEdit}
             onDelete={handleDeleteTodo}
